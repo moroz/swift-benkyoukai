@@ -2,8 +2,8 @@
  * Solarized Dark theme for reveal.js.
  * Author: Achim Staebler
  */
-@import url(./fonts/league-gothic/league-gothic.css);
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap");
 /**
  * Solarized colors by Ethan Schoonover
  */
@@ -21,16 +21,16 @@ section.has-light-background, section.has-light-background h1, section.has-light
  *********************************************/
 :root {
   --r-background-color: #002b36;
-  --r-main-font: Lato, sans-serif;
+  --r-main-font: Open Sans, Lato;
   --r-main-font-size: 40px;
   --r-main-color: #93a1a1;
   --r-block-margin: 20px;
   --r-heading-margin: 0 0 20px 0;
-  --r-heading-font: League Gothic, Impact, sans-serif;
+  --r-heading-font: Lato;
   --r-heading-color: #eee8d5;
   --r-heading-line-height: 1.2;
   --r-heading-letter-spacing: normal;
-  --r-heading-text-transform: uppercase;
+  --r-heading-text-transform: none;
   --r-heading-text-shadow: none;
   --r-heading-font-weight: normal;
   --r-heading1-text-shadow: none;

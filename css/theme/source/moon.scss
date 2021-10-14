@@ -12,8 +12,8 @@
 
 
 // Include theme-specific fonts
-@import url(./fonts/league-gothic/league-gothic.css);
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /**
  * Solarized colors by Ethan Schoonover
@@ -49,6 +49,10 @@ $backgroundColor: $base03;
 $linkColor: $blue;
 $linkColorHover: lighten( $linkColor, 20% );
 $selectionBackgroundColor: $magenta;
+
+$mainFont: "Open Sans", Lato;
+$headingFont: Lato;
+$headingTextTransform: none;
 
 // Change text colors against light slide backgrounds
 @include light-bg-text-color(#222);
