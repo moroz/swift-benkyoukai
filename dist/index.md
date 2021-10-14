@@ -92,6 +92,8 @@ Remove the `esbuild` dependency in `mix.exs` and unlock it:
 mix deps.unlock esbuild
 ```
 
+Remove the block starting with `config :esbuild` inside `config/config.exs`.
+
 
 ### Replace watcher
 
@@ -117,11 +119,11 @@ config :vite_demo, ViteDemoWeb.Endpoint,
 
 ```
 cd assets
-yarn add -D sass postcss postcss-url @types/{phoenix,postcss-url}
+yarn add -D sass @types/{phoenix,postcss-url}
 yarn add bulma phoenix phoenix_html phoenix_live_view
 ```
 
-We install all the usual libraries that Phoenix uses by default, as well as SASS, Bulma, and postcss with a plugin. We will need the plugin to rewrite URLs to static assets linked in CSS.
+We install all the usual libraries that Phoenix uses by default, as well as SASS and Bulma.
 
 
 ### Configure Vite (1)
@@ -131,9 +133,6 @@ Instruct Vite to terminate at the same time as Phoenix:
 ```typescript
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import postcssUrl from "postcss-url";
-
-const BASE_URL = "http://localhost:3000/";
 
 export default defineConfig(({ command }: any) => {
   if (command !== "build") {
@@ -165,24 +164,57 @@ export default defineConfig(({ command }: any) => {
         }
       }
     },
+  }
+});
 ```
 
 
-### Configure Vite (3)
+### Import Vite assets in layout (1)
 
-Rewrite imports to any static assets imported using `url()` to be served by Vite in development:
+Add a function to your `LayoutView` to tell you whether you are running in `dev`:
 
-```typescript
-css: {
-  postcss: {
-    plugins: command !== "build" ? [
-      postcssUrl({
-        url: (asset: any) => {
-          if (asset.url.match(/^https?:\/\//)) return asset.url;
-          const slash = asset.url.startsWith("/") ? "" : "/";
-          return `${BASE_URL}${slash}${asset.url}`;
-        }
-      }) as any
-    ] : []
-  } } }; });
+```elixir
+@env Mix.env() # remember value at compile time
+def dev_env?, do: @env == :dev
+```
+
+
+### Import Vite assets in layout (2)
+
+Add a partial called `_preamble.html.heex` in the directory for layout templates:
+
+```eex
+<%= if dev_env?() do %>
+<script type="module">
+  import RefreshRuntime from
+    "http://localhost:3000/@react-refresh";
+  RefreshRuntime.injectIntoGlobalHook(window);
+  window.$RefreshReg$ = () => {};
+  window.$RefreshSig$ = () => (type) => type;
+  window.__vite_plugin_react_preamble_installed__ = true;
+</script>
+<script type="module" src="http://localhost:3000/@vite/client">
+</script>
+<script type="module" src="http://localhost:3000/src/main.tsx">
+</script>
+<% else %>
+<link phx-track-static rel="stylesheet"
+  href={Routes.static_path(@conn, "/assets/main.css")}/>
+<script defer phx-track-static type="text/javascript"
+  src={Routes.static_path(@conn, "/assets/main.js")}></script>
+<% end %>
+```
+
+
+### Serve raw assets with Phoenix
+
+In your `endpoint.ex`, add a `Plug.Static` to serve raw files from `assets`:
+
+```elixir
+if Mix.env() == :dev do
+  plug Plug.Static,
+    at: "/",
+    from: "assets",
+    gzip: false
+end
 ```
