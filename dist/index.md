@@ -3,7 +3,7 @@
 ### October 2021
 
 
-### What happened to Webpack?
+### But yo what's up with Webpack?
 
 Phoenix 1.6 replaces Webpack with esbuild. This means that the Phoenix core team does not have to spend time maintaining Webpack configs, but Webpack is a powerful and battle-tested tool.
 
@@ -14,7 +14,7 @@ As we know, Phoenix does not depend on any specific build tool so we can use any
 
 ESBuild is very low level. It is basically just a Go library for compiling JavaScript. You can configure it to compile all your JS and CSS without touching NPM or Yarn. Some people even built Hex packages for SASS and Bulma.
 
-If you have ever used the Rails asset pipeline with `bootstrap-sass`, you know how this ends...
+If you have ever used the Rails asset pipeline with `bootstrap-sass`, you know this is not the optimal solution.
 
 
 ### What is Vite.js?
@@ -119,7 +119,7 @@ config :vite_demo, ViteDemoWeb.Endpoint,
 
 ```
 cd assets
-yarn add -D sass @types/{phoenix,postcss-url}
+yarn add -D sass @types/{phoenix,node}
 yarn add bulma phoenix phoenix_html phoenix_live_view
 ```
 
@@ -150,7 +150,6 @@ export default defineConfig(({ command }: any) => {
 
 ```typescript
   return {
-    base: BASE_URL,
     publicDir: "static",
     plugins: [react()],
     build: {
@@ -164,8 +163,7 @@ export default defineConfig(({ command }: any) => {
         }
       }
     },
-  }
-});
+  }});
 ```
 
 
@@ -217,4 +215,127 @@ if Mix.env() == :dev do
     from: "assets",
     gzip: false
 end
+```
+
+
+### Replace default content
+
+Remove the header in layouts and swap the contents of `page/index.html.heex` with a container for our React application:
+
+```html
+<div id="root"></div>
+```
+
+
+### Create a stylesheet hierarchy (1)
+
+Under `assets/src`, create a folder called `sass` with three files: `app.sass`, `_variables.sass`, and `bulma.sass`.
+
+
+### `_variables.sass`
+
+```scss
+@import url('https://fonts.googleapis.com/css?family=Nunito:400,700')
+
+$purple: #8A4D76
+$pink: #FA7C91
+$brown: #757763
+$beige-light: #D0D1CD
+$beige-lighter: #EFF0EB
+
+$family-sans-serif: "Nunito", sans-serif
+$grey-dark: $brown
+$grey-light: $beige-light
+$primary: $purple
+$link: $pink
+$widescreen-enabled: false
+$fullhd-enabled: false
+
+$body-background-color: $beige-lighter
+$control-border-width: 2px
+$input-border-color: transparent
+$input-shadow: none
+```
+
+
+### `bulma.sass`
+
+```scss
+@charset "utf-8"
+/*! bulma.io v0.9.3 | MIT License | github.com/jgthms/bulma */
+
+@import "../../node_modules/bulma/sass/utilities/_all.sass"
+@import "../../node_modules/bulma/sass/base/_all.sass"
+@import "../../node_modules/bulma/sass/elements/button.sass"
+@import "../../node_modules/bulma/sass/elements/container.sass"
+@import "../../node_modules/bulma/sass/elements/title.sass"
+@import "../../node_modules/bulma/sass/form/_all.sass"
+@import "../../node_modules/bulma/sass/components/navbar.sass"
+@import "../../node_modules/bulma/sass/layout/hero.sass"
+@import "../../node_modules/bulma/sass/layout/section.sass"
+```
+
+
+### `app.sass`
+
+```scss
+@import variables
+
+@import bulma
+```
+
+
+### Import the SASS files
+
+Inside `main.tsx`, import the SASS entry file:
+
+```typescript
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+import "./sass/app.sass";
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById("root")
+);
+```
+
+
+### Replace content inside React
+
+Inside `App.tsx`, replace the default content with a simple page:
+
+```typescript
+import { useState, useCallback } from "react";
+import logo from "./logo.svg";
+
+function App() {
+  const [count, setCount] = useState(0);
+  const increment = useCallback(() => {
+    setCount((count) => count + 1);
+  }, [setCount]);
+
+  return (
+    <section className="section">
+      <div className="container">
+        <img src={logo} alt="React logo" width={120} />
+        <h1 className="title">Hello World</h1>
+        <p className="subtitle">
+          A React app running on top of
+          <strong>Phoenix</strong> and with
+          support for <strong>Bulma</strong>
+          and <strong>SASS</strong>!
+        </p>
+        <button className="button is-primary" onClick={increment}>
+          Click me: {count}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+export default App;
 ```
