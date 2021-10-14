@@ -21,7 +21,7 @@ If you have ever used the Rails asset pipeline with `bootstrap-sass`, you know h
 
 Vite.js is a build tool made by the creator of Vue.
 
-It uses ESBuild under the hood and provides some nice configs OOTB, and supports Vue, React, Svelte, and TypeScript.
+It uses ESBuild under the hood and provides some nice configs and supports Vue, React, Svelte, Lit, Preact, Vanilla JS and TypeScript out of the box.
 
 
 ### Getting started
@@ -36,4 +36,153 @@ Create a new project:
 
 ```
 mix phx.new vite_demo
+cd vite_demo
+mix do deps.get, ecto.setup
+```
+
+
+### What we get in the project (1)
+
+The project comes with the package `esbuild` preinstalled:
+
+```elixir
+# mix.exs
+{:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
+```
+
+
+### What we get in the project (2)
+
+In `config/dev.exs`, there is a watcher set for `esbuild`:
+
+```elixir
+config :vite_demo, ViteDemoWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4000],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  watchers: [
+    esbuild: {
+      Esbuild, :install_and_run,
+      [:default, ~w(--sourcemap=inline --watch)]
+    }
+  ]
+```
+
+
+### Creating a config for Vite.js
+
+Generate a Vite.js project using `yarn create`:
+
+```
+yarn create vite --template react-ts vite-project
+```
+
+
+### Copy files over to Phoenix
+
+Copy the whole Vite project to the `assets` directory of your phoenix application, and remove `index.html`.
+
+
+### Uninstall esbuild
+
+Remove the `esbuild` dependency in `mix.exs` and unlock it:
+
+```
+mix deps.unlock esbuild
+```
+
+
+### Replace watcher
+
+In `config/dev.exs`, replace the code that launches esbuild with a call to the new Vite watcher:
+
+```elixir
+config :vite_demo, ViteDemoWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4000],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  # ...
+  watchers: [
+    node: [
+      "node_modules/vite/bin/vite.js",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
+```
+
+
+### Install SASS and Phoenix JS deps
+
+```
+cd assets
+yarn add -D sass postcss postcss-url @types/{phoenix,postcss-url}
+yarn add bulma phoenix phoenix_html phoenix_live_view
+```
+
+We install all the usual libraries that Phoenix uses by default, as well as SASS, Bulma, and postcss with a plugin. We will need the plugin to rewrite URLs to static assets linked in CSS.
+
+
+### Configure Vite (1)
+
+Instruct Vite to terminate at the same time as Phoenix:
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import postcssUrl from "postcss-url";
+
+const BASE_URL = "http://localhost:3000/";
+
+export default defineConfig(({ command }: any) => {
+  if (command !== "build") {
+    // Terminate the watcher when Phoenix quits
+    process.stdin.on("close", () => {
+      process.exit(0);
+    });
+    process.stdin.resume();
+  }
+  // ...
+```
+
+
+### Configure Vite (2)
+
+```typescript
+  return {
+    base: BASE_URL,
+    publicDir: "static",
+    plugins: [react()],
+    build: {
+      target: "esnext",
+      outDir: "../priv/static", // build assets to priv/static
+      emptyOutDir: true,
+      sourcemap: true,
+      rollupOptions: {
+        input: {
+          main: "./js/app.js"
+        }
+      }
+    },
+```
+
+
+### Configure Vite (3)
+
+Rewrite imports to any static assets imported using `url()` to be served by Vite in development:
+
+```typescript
+css: {
+  postcss: {
+    plugins: command !== "build" ? [
+      postcssUrl({
+        url: (asset: any) => {
+          if (asset.url.match(/^https?:\/\//)) return asset.url;
+          const slash = asset.url.startsWith("/") ? "" : "/";
+          return `${BASE_URL}${slash}${asset.url}`;
+        }
+      }) as any
+    ] : []
+  } } }; });
 ```
