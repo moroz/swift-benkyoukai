@@ -49,13 +49,22 @@ $backgroundColor: $base03;
 $linkColor: $blue;
 $linkColorHover: lighten( $linkColor, 20% );
 $selectionBackgroundColor: $magenta;
+$codeFont: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;
 
-$mainFont: "Open Sans", Lato;
-$headingFont: Lato;
+$mainFont: Lato;
+$headingFont: "Lato", system-ui;
 $headingTextTransform: none;
 
 // Change text colors against light slide backgrounds
 @include light-bg-text-color(#222);
+
+:not(pre) > code {
+  font-size: .9em;
+  display: inline-block;
+  padding: 0 .1em;
+  background: $base02;
+  color: $base2;
+}
 
 // Theme template ------------------------------
 @import "../template/theme";
