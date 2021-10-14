@@ -1,13 +1,15 @@
-## Integrating Vite.js with Phoenix 1.6
-### 勉強会 (benky&#333;kai) by Karol Moroz
-### October 2021
+### Integrating Vite.js with Phoenix 1.6
+#### 勉強会 (benky&#333;kai) by Karol Moroz
+#### October 2021
 
 
-### But yo what's up with Webpack?
+### But yo what&rsquo;s up with Webpack?
 
-Phoenix 1.6 replaces Webpack with esbuild. This means that the Phoenix core team does not have to spend time maintaining Webpack configs, but Webpack is a powerful and battle-tested tool.
+Phoenix 1.6 replaces Webpack with esbuild. This means that the Phoenix core team does not have to spend time maintaining Webpack configs.
 
-As we know, Phoenix does not depend on any specific build tool so we can use anything we want that compiles assets to `priv/static`.
+Webpack is a powerful tool. It's also slow, taking forever to start up in a larger project.
+
+Phoenix does not depend on any specific build tool so we can use anything we want that compiles assets to `priv/static`.
 
 
 ### Why not ESBuild?
@@ -19,9 +21,9 @@ If you have ever used the Rails asset pipeline with `bootstrap-sass`, you know t
 
 ### What is Vite.js?
 
-Vite.js is a build tool made by the creator of Vue.
+Vite.js is a build tool made by the creator of Vue, Evan&nbsp;You (尤雨溪).
 
-It uses ESBuild under the hood and provides some nice configs and supports Vue, React, Svelte, Lit, Preact, Vanilla JS and TypeScript out of the box.
+It uses ESBuild under the hood and supports Vue, React, Svelte, Lit, Preact, Vanilla JS and TypeScript out of the box.
 
 
 ### Getting started
@@ -115,33 +117,42 @@ config :vite_demo, ViteDemoWeb.Endpoint,
 ```
 
 
-### Install SASS and Phoenix JS deps
+### Install SASS and Bulma
 
 ```
 cd assets
-yarn add -D sass @types/{phoenix,node}
-yarn add bulma phoenix phoenix_html phoenix_live_view
+yarn add -D sass @types/node
+yarn add bulma
 ```
 
-We install all the usual libraries that Phoenix uses by default, as well as SASS and Bulma.
+
+### Install Phoenix deps
+
+This step is optional.
+
+```
+yarn add -D @types/phoenix
+yarn add phoenix phoenix_html phoenix_live_view
+```
 
 
 ### Configure Vite (1)
-
-Instruct Vite to terminate at the same time as Phoenix:
 
 ```typescript
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ command }: any) => {
-  if (command !== "build") {
+  const isDev = command !== "build";
+  if (isDev) {
     // Terminate the watcher when Phoenix quits
     process.stdin.on("close", () => {
       process.exit(0);
     });
+
     process.stdin.resume();
   }
+
   // ...
 ```
 
@@ -153,17 +164,24 @@ export default defineConfig(({ command }: any) => {
     publicDir: "static",
     plugins: [react()],
     build: {
-      target: "esnext",
-      outDir: "../priv/static", // build assets to priv/static
+      target: "esnext", // build for recent browsers
+      outDir: "../priv/static", // emit assets to priv/static
       emptyOutDir: true,
-      sourcemap: true,
+      sourcemap: isDev, // enable source map in dev build
+      manifest: false, // do not generate manifest.json
       rollupOptions: {
         input: {
-          main: "./js/app.js"
+          main: "./src/main.tsx"
+        },
+        output: {
+          entryFileNames: "assets/[name].js", // remove hash
+          chunkFileNames: "assets/[name].js",
+          assetFileNames: "assets/[name][extname]"
         }
       }
-    },
-  }});
+    }
+  };
+});
 ```
 
 
@@ -183,23 +201,20 @@ Add a partial called `_preamble.html.heex` in the directory for layout templates
 
 ```eex
 <%= if dev_env?() do %>
-<script type="module">
-  import RefreshRuntime from
-    "http://localhost:3000/@react-refresh";
-  RefreshRuntime.injectIntoGlobalHook(window);
-  window.$RefreshReg$ = () => {};
-  window.$RefreshSig$ = () => (type) => type;
-  window.__vite_plugin_react_preamble_installed__ = true;
-</script>
-<script type="module" src="http://localhost:3000/@vite/client">
-</script>
-<script type="module" src="http://localhost:3000/src/main.tsx">
-</script>
+  <script type="module">
+    import RefreshRuntime from "http://localhost:3000/@react-refresh";
+    RefreshRuntime.injectIntoGlobalHook(window);
+    window.$RefreshReg$ = () => {};
+    window.$RefreshSig$ = () => (type) => type;
+    window.__vite_plugin_react_preamble_installed__ = true;
+  </script>
+  <script type="module" src="http://localhost:3000/@vite/client"></script>
+  <script type="module" src="http://localhost:3000/src/main.tsx"></script>
 <% else %>
-<link phx-track-static rel="stylesheet"
-  href={Routes.static_path(@conn, "/assets/main.css")}/>
-<script defer phx-track-static type="text/javascript"
-  src={Routes.static_path(@conn, "/assets/main.js")}></script>
+  <link phx-track-static rel="stylesheet"
+    href={Routes.static_path(@conn, "/assets/main.css")}/>
+  <script defer phx-track-static type="text/javascript"
+    src={Routes.static_path(@conn, "/assets/main.js")}></script>
 <% end %>
 ```
 
@@ -304,9 +319,9 @@ ReactDOM.render(
 ```
 
 
-### Replace content inside React
+### Replace React content
 
-Inside `App.tsx`, replace the default content with a simple page:
+Inside `App.tsx`, replace the default content:
 
 ```typescript
 import { useState, useCallback } from "react";
@@ -324,10 +339,8 @@ function App() {
         <img src={logo} alt="React logo" width={120} />
         <h1 className="title">Hello World</h1>
         <p className="subtitle">
-          A React app running on top of
-          <strong>Phoenix</strong> and with
-          support for <strong>Bulma</strong>
-          and <strong>SASS</strong>!
+          A React app running on top of <strong>Phoenix</strong> and with
+          support for <strong>Bulma</strong> and <strong>SASS</strong>!
         </p>
         <button className="button is-primary" onClick={increment}>
           Click me: {count}
@@ -339,3 +352,11 @@ function App() {
 
 export default App;
 ```
+
+
+### Deployment
+
+With this setup, you don't need to do anything extra to compile your assets for a production deployment. A call to `yarn build` inside assets will emit all necessary files to `priv/static/assets`, and Phoenix will take it from there.
+
+
+## Thank 🦃

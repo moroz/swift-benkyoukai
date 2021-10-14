@@ -51,7 +51,7 @@ $linkColorHover: lighten( $linkColor, 20% );
 $selectionBackgroundColor: $magenta;
 $codeFont: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;
 
-$mainFont: Lato;
+$mainFont: Lato, system-ui;
 $headingFont: "Lato", system-ui;
 $headingTextTransform: none;
 
@@ -64,6 +64,11 @@ $headingTextTransform: none;
   padding: 0 .1em;
   background: $base02;
   color: $base2;
+}
+
+.reveal pre code {
+  font-size: .8em;
+  max-height: 500px !important;
 }
 
 // Theme template ------------------------------

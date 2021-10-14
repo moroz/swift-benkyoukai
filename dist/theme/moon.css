@@ -24,12 +24,17 @@ section.has-light-background, section.has-light-background h1, section.has-light
   color: #eee8d5;
 }
 
+.reveal pre code {
+  font-size: 0.8em;
+  max-height: 500px !important;
+}
+
 /*********************************************
  * GLOBAL STYLES
  *********************************************/
 :root {
   --r-background-color: #002b36;
-  --r-main-font: Lato;
+  --r-main-font: Lato, system-ui;
   --r-main-font-size: 40px;
   --r-main-color: #93a1a1;
   --r-block-margin: 20px;
