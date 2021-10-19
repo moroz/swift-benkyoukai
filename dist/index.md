@@ -37,38 +37,9 @@ mix archive.install hex phx_new
 Create a new project:
 
 ```
-mix phx.new vite_demo
+mix phx.new --no-ecto --no-assets vite_demo
 cd vite_demo
-mix do deps.get, ecto.setup
-```
-
-
-### What we get in the project (1)
-
-The project comes with the package `esbuild` preinstalled:
-
-```elixir
-# mix.exs
-{:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
-```
-
-
-### What we get in the project (2)
-
-In `config/dev.exs`, there is a watcher set for `esbuild`:
-
-```elixir
-config :vite_demo, ViteDemoWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4000],
-  check_origin: false,
-  code_reloader: true,
-  debug_errors: true,
-  watchers: [
-    esbuild: {
-      Esbuild, :install_and_run,
-      [:default, ~w(--sourcemap=inline --watch)]
-    }
-  ]
+mix deps.get
 ```
 
 
@@ -77,29 +48,14 @@ config :vite_demo, ViteDemoWeb.Endpoint,
 Generate a Vite.js project using `yarn create`:
 
 ```
-yarn create vite --template react-ts vite-project
+cd assets
+yarn create vite --template react-ts assets
 ```
 
 
-### Copy files over to Phoenix
+### Add a watcher
 
-Copy the whole Vite project to the `assets` directory of your phoenix application, and remove `index.html`.
-
-
-### Uninstall esbuild
-
-Remove the `esbuild` dependency in `mix.exs` and unlock it:
-
-```
-mix deps.unlock esbuild
-```
-
-Remove the block starting with `config :esbuild` inside `config/config.exs`.
-
-
-### Replace watcher
-
-In `config/dev.exs`, replace the code that launches esbuild with a call to the new Vite watcher:
+In `config/dev.exs`, configure Phoenix endpoint to start the Vite.js watcher with the application:
 
 ```elixir
 config :vite_demo, ViteDemoWeb.Endpoint,
