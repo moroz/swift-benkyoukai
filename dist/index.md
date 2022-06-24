@@ -92,3 +92,177 @@ class KeychainHelper { // ...
 }
 let tokens: TokenPair? = KeychainHelper.shared.read() // T inferred as TokenPair
 ```
+
+
+### Type safety
+
+Only optional types can be nil:
+
+```swift
+var caption = "I am a string"
+caption = nil // won't compile 
+
+var optionalCaption: String? = "I am an optional string"
+optionalCaption = nil // OK
+```
+
+
+### Optional binding
+
+Swift:
+
+```swift
+func doSomethingWithOptional(arg: SomeStruct?) {
+  // SomeStruct? is shorthand for Optional<SomeStruct>
+  guard let arg = arg else {
+    return
+  }
+
+  // ... do something
+  // if let works too
+}
+```
+
+Rust:
+
+```rust
+pub fn do_something(arg: Option<SomeStruct>) {
+  if let arg = arg {
+    // ...do something
+  }
+}
+```
+
+
+## iOS
+
+
+### Different from the Web #1
+
+* no URLs
+* no HTML, CSS, JavaScript
+* no forms
+* no cookie session
+* no `JSON.parse` to dynamic structures
+
+
+### Different from the Web #2
+
+* run loops, threads, `DispatchQueue`
+* Objective-C and NeXTStep legacy
+* mostly compatible with other Apple OSes
+* you can run raw C, if you dare
+
+
+### NeXTStep legacy
+
+* classes starting with NS
+* old but robust standard library
+* `NSLocalizableString`
+* `NSURLSession` (=> `URLSession`)
+
+
+### Objective-C legacy
+
+```swift
+// Storing a token in system keychain be like
+
+let query: [String: Any] =
+  [
+    kSecValueData as String: data,
+    kSecClass as String: kSecClassGenericPassword,
+    kSecAttrService as String: service,
+    kSecAttrAccount as String: account,
+  ]
+
+// positional arguments
+let status = SecItemAdd(query as CFDictionary, nil)
+
+// success check by comparing to a negative int constant
+if status == errSecDuplicateItem { // ...
+```
+
+
+### Very powerful locale support
+
+```swift
+import Foundation
+
+let date = Date()
+
+let formatter = DateFormatter()
+formatter.dateStyle = .full
+formatter.timeStyle = .full
+formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+
+formatter.locale = Locale(identifier: "ja-JP")
+print(formatter.string(from: date))
+// 2022年6月24日 金曜日 20時21分58秒 日本標準時
+formatter.locale = Locale(identifier: "uk-UA")
+print(formatter.string(from: date))
+// пʼятниця, 24 червня 2022 р. о 20:21:58 за японським стандартним часом
+formatter.locale = Locale(identifier: "es-MX")
+print(formatter.string(from: date))
+// viernes, 24 de junio de 2022, 20:21:58 hora estándar de Japón
+```
+
+
+### Two frameworks
+
+* UIKit &mdash; old but more comprehensive<br/>MVC, clicking on storyboards, loads of code
+* SwiftUI &mdash; bleeding-edge declarative UI<br/>MVVM, stateful views
+* fully interoperable
+
+
+### Persistence
+
+* Realm (cross-platform)
+* Firebase (cross-platform)
+* SQLite (cross-platform)
+* Core Data (Apple only)
+
+
+### Async I/O
+
+```swift
+Network.shared.apollo.fetch(query: CurrentUserQuery()) { [unowned self] result in
+  self.loading = false
+
+  guard let data = try? result.get().data else {
+    return
+  }
+
+  if let user = try? User(from: data.user.fragments.userDetails) {
+    withAnimation {
+      self.user = user
+    }
+  }
+}
+```
+
+
+### Navigation
+
+```swift
+struct IndexView: View {
+  @EnvironmentObject private var dataStore: DataStore
+
+  var body: some View {
+    Group {
+      if dataStore.practices.count == 0 {
+        Text("Loading...")
+      } else {
+        List(dataStore.practices) { practice in
+          NavigationLink(practice.name,
+            destination: PracticeView(practice: practice)) // <=== 
+        }
+        .navigationTitle("Practices")
+      }
+    }
+    .onAppear { try? dataStore.loadPractices() }
+  }
+}
+```
+
+
+## Thank 🦃
