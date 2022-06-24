@@ -1,318 +1,94 @@
-### Integrating Vite.js with Phoenix 1.6
+### Learning Swift and iOS as a Web Developer
 #### 勉強会 (benky&#333;kai) by Karol Moroz
-#### October 2021
+#### June 2022
 
 
-### But yo what&rsquo;s up with Webpack?
+### Motivation
 
-Phoenix 1.6 replaces Webpack with esbuild. This means that the Phoenix core team does not have to spend time maintaining Webpack configs.
+* always wanted to build mobile apps
+* React Native is obese
+* Flutter is made by Google, and Google is bad
+* Android is made by Google and uses Java
 
-Webpack is a powerful tool. It's also slow, taking forever to start up in a larger project.
 
-Phoenix does not depend on any specific build tool so we can use anything we want that compiles assets to `priv/static`.
+### First Attempt
 
+* bought a book 2 years ago
+* never read it
 
-### Why not ESBuild?
 
-ESBuild is very low level. It is basically just a Go library for compiling JavaScript. You can configure it to compile all your JS and CSS without touching NPM or Yarn. Some people even built Hex packages for SASS and Bulma.
+### Second Attempt
 
-If you have ever used the Rails asset pipeline with `bootstrap-sass`, you know this is not the optimal solution.
+* built a React Native app for China Steel
+* it had to work on the Web, too
+* ended up deploying a PWA
 
 
-### What is Vite.js?
+### Iron Man Challenge 鐵人賽
 
-Vite.js is a build tool made by the creator of Vue, Evan&nbsp;You (尤雨溪).
+* write posts about a topic for 30 days
+* no excuses or breaks
+* held by iThome, a Stack Overflow clone
+* 1st prize is NT$10,000, or about US$330
 
-It uses ESBuild under the hood and supports Vue, React, Svelte, Lit, Preact, Vanilla JS and TypeScript out of the box.
 
+### My challenge
 
-### Getting started
+* posts published at <a href="https://moroz.dev/blog" target="_blank" rel="noopener noreferrer">moroz.dev/blog</a>
+* 28 posts
+* learning Swift and SwiftUI
 
-Install Latest Phoenix:
 
-```
-mix archive.install hex phx_new
-```
+### Takeaways
 
-Create a new project:
+* Swift is nice
+* full type safety but not too problematic
+* SwiftUI is declarative and looks like Flutter
+* Generics, protocols, enums with values, optionals
 
-```
-mix phx.new --no-ecto --no-assets vite_demo
-cd vite_demo
-mix deps.get
-```
 
+## Swift
+### Type safety
 
-### Creating a config for Vite.js
 
-Generate a Vite.js project using `yarn create`:
+### Type inference #1
 
-```
-cd assets
-yarn create vite --template react-ts assets
-```
+```swift
+// inferred as Date
+let date = Date()
 
-
-### Add a watcher
-
-In `config/dev.exs`, configure Phoenix endpoint to start the Vite.js watcher with the application:
-
-```elixir
-config :vite_demo, ViteDemoWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4000],
-  check_origin: false,
-  code_reloader: true,
-  debug_errors: true,
-  # ...
-  watchers: [
-    node: [
-      "node_modules/vite/bin/vite.js",
-      cd: Path.expand("../assets", __DIR__)
-    ]
-  ]
-```
-
-
-### Install SASS and Bulma
-
-```
-cd assets
-yarn add -D sass @types/node
-yarn add bulma
-```
-
-
-### Install Phoenix deps
-
-This step is optional.
-
-```
-yarn add -D @types/phoenix
-yarn add phoenix phoenix_html phoenix_live_view
-```
-
-
-### Configure Vite (1)
-
-```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-
-export default defineConfig(({ command }: any) => {
-  const isDev = command !== "build";
-  if (isDev) {
-    // Terminate the watcher when Phoenix quits
-    process.stdin.on("close", () => {
-      process.exit(0);
-    });
-
-    process.stdin.resume();
-  }
-
-  // ...
-```
-
-
-### Configure Vite (2)
-
-```typescript
-  return {
-    publicDir: "static",
-    plugins: [react()],
-    build: {
-      target: "esnext", // build for recent browsers
-      outDir: "../priv/static", // emit assets to priv/static
-      emptyOutDir: true,
-      sourcemap: isDev, // enable source map in dev build
-      manifest: false, // do not generate manifest.json
-      rollupOptions: {
-        input: {
-          main: "./src/main.tsx"
-        },
-        output: {
-          entryFileNames: "assets/[name].js", // remove hash
-          chunkFileNames: "assets/[name].js",
-          assetFileNames: "assets/[name][extname]"
-        }
-      }
-    }
-  };
-});
-```
-
-
-### Import Vite assets in layout (1)
-
-Add a function to your `LayoutView` to tell you whether you are running in `dev`:
-
-```elixir
-@env Mix.env() # remember value at compile time
-def dev_env?, do: @env == :dev
-```
-
-
-### Import Vite assets in layout (2)
-
-Add a partial called `_preamble.html.heex` in the directory for layout templates:
-
-```eex
-<%= if dev_env?() do %>
-  <script type="module">
-    import RefreshRuntime from "http://localhost:3000/@react-refresh";
-    RefreshRuntime.injectIntoGlobalHook(window);
-    window.$RefreshReg$ = () => {};
-    window.$RefreshSig$ = () => (type) => type;
-    window.__vite_plugin_react_preamble_installed__ = true;
-  </script>
-  <script type="module" src="http://localhost:3000/@vite/client"></script>
-  <script type="module" src="http://localhost:3000/src/main.tsx"></script>
-<% else %>
-  <link phx-track-static rel="stylesheet"
-    href={Routes.static_path(@conn, "/assets/main.css")}/>
-  <script defer phx-track-static type="text/javascript"
-    src={Routes.static_path(@conn, "/assets/main.js")}></script>
-<% end %>
-```
-
-
-### Serve raw assets with Phoenix
-
-In your `endpoint.ex`, add a `Plug.Static` to serve raw files from `assets`:
-
-```elixir
-if Mix.env() == :dev do
-  plug Plug.Static,
-    at: "/",
-    from: "assets",
-    gzip: false
-end
-```
-
-
-### Replace default content
-
-Remove the header in layouts and swap the contents of `page/index.html.heex` with a container for our React application:
-
-```html
-<div id="root"></div>
-```
-
-
-### Create a stylesheet hierarchy (1)
-
-Under `assets/src`, create a folder called `sass` with three files: `app.sass`, `_variables.sass`, and `bulma.sass`.
-
-
-### `_variables.sass`
-
-```scss
-@import url('https://fonts.googleapis.com/css?family=Nunito:400,700')
-
-$purple: #8A4D76
-$pink: #FA7C91
-$brown: #757763
-$beige-light: #D0D1CD
-$beige-lighter: #EFF0EB
-
-$family-sans-serif: "Nunito", sans-serif
-$grey-dark: $brown
-$grey-light: $beige-light
-$primary: $purple
-$link: $pink
-$widescreen-enabled: false
-$fullhd-enabled: false
-
-$body-background-color: $beige-lighter
-$control-border-width: 2px
-$input-border-color: transparent
-$input-shadow: none
-```
-
-
-### `bulma.sass`
-
-```scss
-@charset "utf-8"
-/*! bulma.io v0.9.3 | MIT License | github.com/jgthms/bulma */
-
-@import "../../node_modules/bulma/sass/utilities/_all.sass"
-@import "../../node_modules/bulma/sass/base/_all.sass"
-@import "../../node_modules/bulma/sass/elements/button.sass"
-@import "../../node_modules/bulma/sass/elements/container.sass"
-@import "../../node_modules/bulma/sass/elements/title.sass"
-@import "../../node_modules/bulma/sass/form/_all.sass"
-@import "../../node_modules/bulma/sass/components/navbar.sass"
-@import "../../node_modules/bulma/sass/layout/hero.sass"
-@import "../../node_modules/bulma/sass/layout/section.sass"
-```
-
-
-### `app.sass`
-
-```scss
-@import variables
-
-@import bulma
-```
-
-
-### Import the SASS files
-
-Inside `main.tsx`, import the SASS entry file:
-
-```typescript
-import React from "react";
-import ReactDOM from "react-dom";
-import App from "./App";
-import "./sass/app.sass";
-
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
-```
-
-
-### Replace React content
-
-Inside `App.tsx`, replace the default content:
-
-```typescript
-import { useState, useCallback } from "react";
-import logo from "./logo.svg";
-
-function App() {
-  const [count, setCount] = useState(0);
-  const increment = useCallback(() => {
-    setCount((count) => count + 1);
-  }, [setCount]);
-
-  return (
-    <section className="section">
-      <div className="container">
-        <img src={logo} alt="React logo" width={120} />
-        <h1 className="title">Hello World</h1>
-        <p className="subtitle">
-          A React app running on top of <strong>Phoenix</strong> and with
-          support for <strong>Bulma</strong> and <strong>SASS</strong>!
-        </p>
-        <button className="button is-primary" onClick={increment}>
-          Click me: {count}
-        </button>
-      </div>
-    </section>
-  );
+// inferred as String
+let productJSON = """
+{
+  "title": "A book",
+  "price":"420.69",
+  "description": "This is a JSON object describing a book."
 }
+"""
 
-export default App;
+// inferred as Optional<Product>
+let decoded = try? JSONDecoder().decode(Product.self, from: productJSON)
 ```
 
 
-### Deployment
+### Type inference with generics
 
-With this setup, you don't need to do anything extra to compile your assets for a production deployment. A call to `yarn build` inside assets will emit all necessary files to `priv/static/assets`, and Phoenix will take it from there.
-
-
-## Thank 🦃
+```swift
+struct TokenPair: Codable {
+  let accessToken: String; let refreshToken: String
+}
+class KeychainHelper { // ...
+  func read<T>(service: String = SERVICE, account: String = ACCOUNT)
+      -> T? where T: Codable {
+    guard let data = read(service: service, account: account) else { return nil }
+    do {
+      let item: T = try JSONDecoder().decode(T.self, from: data)
+      return item
+    } catch {
+      assertionFailure("Failed to decode item for keychain: \(error)")
+      return nil
+    }
+  }
+}
+let tokens: TokenPair? = KeychainHelper.shared.read() // T inferred as TokenPair
+```
