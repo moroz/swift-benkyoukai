@@ -48,7 +48,11 @@
 
 
 ## Swift
-### Type safety
+
+
+### Little boilerplate
+
+<img src="dist/generated-constructor.png" height="225" width="678" />
 
 
 ### Type inference #1
@@ -263,6 +267,13 @@ struct IndexView: View {
   }
 }
 ```
+
+
+### Resources
+
+* [RayWenderlich.com](https://www.raywenderlich.com/home)<br/>Subscription based, zero to hero learning tracks
+* [Introducing SwiftUI](https://developer.apple.com/tutorials/swiftui) by Apple<br/>Beautiful graphics, good code, limited in scope
+* [Hacking with Swift](https://www.hackingwithswift.com/)<br/>Solutions to common iOS problems
 
 
 ## Thank 🦃
